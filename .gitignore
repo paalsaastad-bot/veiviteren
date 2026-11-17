@@ -1,0 +1,21 @@
+# Hemmeligheter – skal ALDRI i Git
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Avhengigheter og byggeresultater
+node_modules/
+.expo/
+dist/
+build/
+__pycache__/
+.venv/
+
+# System
+.DS_Store
+Thumbs.db

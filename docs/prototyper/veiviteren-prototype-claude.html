@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VeiViteren – prototype (alt via Claude)</title>
+<style>
+  :root {
+    --asfalt: #1c1e22;
+    --skiltbrun: #6b4a2b;
+    --linjegul: #f2c230;
+    --taakehvit: #f5f2ec;
+    --skumringblaa: #2e3a48;
+    --skumringblaa-lys: #3a4a5c;
+    --dus: #9aa6b2;
+    --dusere: #6b7885;
+    --kremtekst: #e8dcc8;
+    --feilroed: #e8a0a0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--asfalt);
+    color: var(--taakehvit);
+    font-family: 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 0 16px 64px; }
+  .display { font-family: 'Avenir Next Condensed', 'Arial Narrow', sans-serif; text-transform: uppercase; }
+  header { padding: 32px 0 24px; }
+  .toppskilt {
+    display: inline-block;
+    background: var(--skiltbrun);
+    border: 2px solid var(--taakehvit);
+    border-radius: 10px;
+    padding: 16px 20px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.4);
+  }
+  .toppskilt h1 { font-size: 1.6rem; letter-spacing: .08em; }
+  .toppskilt p { font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; color: var(--kremtekst); margin-top: 4px; }
+  .midtstripe {
+    height: 4px; margin: 0 0 24px;
+    background: repeating-linear-gradient(90deg, var(--linjegul) 0 32px, transparent 32px 56px);
+  }
+  h2.etikett { font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; color: var(--dus); margin-bottom: 8px; }
+  .rad { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  button {
+    font: inherit; cursor: pointer; border: none;
+    border-radius: 8px; padding: 8px 12px;
+    font-size: .875rem; font-weight: 600; letter-spacing: .02em;
+    background: var(--skumringblaa); color: var(--taakehvit);
+    transition: background .15s, filter .15s;
+  }
+  button:hover { background: var(--skumringblaa-lys); }
+  button.aktiv { background: var(--linjegul); color: var(--asfalt); }
+  button:disabled { opacity: .5; cursor: wait; }
+  button:focus-visible { outline: 3px solid var(--linjegul); outline-offset: 2px; }
+  input {
+    font: inherit; font-size: .875rem;
+    background: var(--skumringblaa); color: var(--taakehvit);
+    border: none; border-radius: 8px; padding: 8px 12px; width: 116px;
+  }
+  input.bred { width: 100%; max-width: 420px; }
+  input::placeholder { color: var(--dusere); }
+  input:focus-visible { outline: 3px solid var(--linjegul); outline-offset: 1px; }
+  section { margin-bottom: 24px; }
+  .status { font-size: .875rem; color: var(--linjegul); margin-bottom: 16px; animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+  @media (prefers-reduced-motion: reduce) { .status { animation: none; } }
+  .feil { font-size: .875rem; color: var(--feilroed); margin-bottom: 16px; }
+  .skilt { background: var(--skiltbrun); border: 2px solid var(--taakehvit); border-radius: 10px; }
+  #fortelling { padding: 20px; margin-bottom: 24px; box-shadow: 0 8px 24px rgba(0,0,0,.45); }
+  #f-tittel { font-size: 1.1rem; letter-spacing: .05em; line-height: 1.15; }
+  #f-meta { font-size: .72rem; color: var(--kremtekst); margin-top: 4px; }
+  .lydlinje { height: 4px; margin: 16px 0; background: repeating-linear-gradient(90deg, #8a7452 0 24px, transparent 24px 42px); }
+  .lydlinje.aktiv { background: repeating-linear-gradient(90deg, var(--linjegul) 0 24px, transparent 24px 42px); }
+  #f-tekst { font-size: .95rem; line-height: 1.65; white-space: pre-line; }
+  .f-knapper { margin-top: 16px; display: flex; gap: 8px; }
+  .f-knapper .spill { background: var(--linjegul); color: var(--asfalt); font-weight: 700; padding: 10px 16px; }
+  .f-knapper .stopp { background: var(--taakehvit); color: var(--asfalt); font-weight: 700; padding: 10px 16px; }
+  #stemmevarsel { font-size: .72rem; color: var(--kremtekst); margin-top: 8px; }
+  #poiliste { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  #poiliste button {
+    width: 100%; text-align: left;
+    background: var(--skiltbrun); border: 2px solid var(--taakehvit);
+    border-radius: 10px; padding: 12px 16px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  #poiliste button:hover { filter: brightness(1.12); background: var(--skiltbrun); }
+  #poiliste .topplinje { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; }
+  #poiliste .navn { font-family: 'Avenir Next Condensed', 'Arial Narrow', sans-serif; text-transform: uppercase; font-size: .85rem; letter-spacing: .04em; font-weight: 600; }
+  #poiliste .avstand { font-size: .72rem; color: var(--kremtekst); white-space: nowrap; }
+  #poiliste .hint { font-size: .78rem; color: var(--kremtekst); font-weight: 400; }
+  details { margin-top: 8px; }
+  summary { font-size: .75rem; color: var(--dus); cursor: pointer; }
+  footer { margin-top: 40px; font-size: .72rem; color: var(--dusere); line-height: 1.6; }
+  .skjult { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="toppskilt">
+      <h1 class="display">VeiViteren</h1>
+      <p>Prototype · alt via Claude · posisjon → søk → fortelling → tale</p>
+    </div>
+  </header>
+
+  <div class="midtstripe" aria-hidden="true"></div>
+
+  <section>
+    <div class="rad" id="spraakrad"></div>
+    <div class="rad" id="lengderad"></div>
+  </section>
+
+  <section>
+    <h2 class="etikett">Posisjon</h2>
+    <div class="rad" id="posisjonsrad"></div>
+    <div class="rad">
+      <input id="lat" placeholder="61.0471" inputmode="decimal" aria-label="Breddegrad">
+      <input id="lon" placeholder="7.8122" inputmode="decimal" aria-label="Lengdegrad">
+      <button id="gaahit">Gå hit</button>
+    </div>
+    <details>
+      <summary>API-nøkkel (bare nødvendig utenfor Claude)</summary>
+      <div class="rad" style="margin-top:8px">
+        <input id="apikey" class="bred" type="password" placeholder="sk-ant-…" aria-label="Anthropic API-nøkkel">
+      </div>
+    </details>
+  </section>
+
+  <p class="status skjult" id="status"></p>
+  <p class="feil skjult" id="feil"></p>
+
+  <section class="skilt skjult" id="fortelling" aria-live="polite">
+    <h3 class="display" id="f-tittel"></h3>
+    <p id="f-meta"></p>
+    <div class="lydlinje" id="lydlinje" aria-hidden="true"></div>
+    <p id="f-tekst"></p>
+    <div class="f-knapper">
+      <button class="spill" id="spillknapp">▶ Spill av</button>
+      <button class="stopp skjult" id="stoppknapp">■ Stopp</button>
+    </div>
+    <p id="stemmevarsel" class="skjult"></p>
+  </section>
+
+  <section id="resultater" class="skjult">
+    <h2 class="etikett" id="resultat-etikett"></h2>
+    <ul id="poiliste"></ul>
+  </section>
+
+  <footer>
+    Alt går gjennom Claude-API-et: Claude websøker etter severdigheter nær posisjonen, velger de mest interessante,
+    og skriver deretter en muntlig fortelling om den du velger. Enhetens talesyntese leser opp.
+    I produkt gjøres geosøket mot en egen POI-database (raskere og mer presist), og talesyntesen byttes mot profesjonell TTS.
+  </footer>
+</div>
+
+<script>
+// ---------- Data ----------
+const PRESETS = [
+  { name: "Borgund (E16)", lat: 61.0471, lon: 7.8122 },
+  { name: "Lærdalsøyri",   lat: 61.0996, lon: 7.4815 },
+  { name: "Vang i Valdres",lat: 61.1256, lon: 8.5714 },
+  { name: "Fagernes",      lat: 60.9857, lon: 9.2325 },
+  { name: "Hønefoss",      lat: 60.168,  lon: 10.256 },
+];
+
+const LANGS = [
+  { code: "no", label: "Norsk",    tts: "nb", name: "Norwegian (bokmål)" },
+  { code: "en", label: "English",  tts: "en", name: "English" },
+  { code: "de", label: "Deutsch",  tts: "de", name: "German" },
+  { code: "fr", label: "Français", tts: "fr", name: "French" },
+];
+
+const TXT = {
+  no: { searching:"Claude leter langs veien … (10–30 sek)", writing:"Claude skriver fortellingen … (10–30 sek)", nothing:"Fant ingen severdigheter her. Prøv et annet punkt.", play:"▶ Spill av", stop:"■ Stopp", found:"severdigheter nær", noVoice:"Fant ingen stemme for språket på denne enheten – teksten vises likevel.", aifail:"Claude-kallet feilet: ", parsefail:"Klarte ikke tolke svaret fra Claude – prøv igjen.", nopos:"Fikk ikke tilgang til posisjon her – bruk forhåndsvalg eller koordinater.", badcoord:"Ugyldige koordinater.", mypos:"Min posisjon", needkey:"Utenfor Claude kreves API-nøkkel – åpne «API-nøkkel» over og lim inn nøkkelen din." },
+  en: { searching:"Claude is scanning the roadside … (10–30 s)", writing:"Claude is writing the story … (10–30 s)", nothing:"No sights found here. Try another spot.", play:"▶ Play", stop:"■ Stop", found:"sights near", noVoice:"No matching voice on this device – showing text anyway.", aifail:"The Claude call failed: ", parsefail:"Could not parse Claude's answer – try again.", nopos:"Location unavailable here – use presets or coordinates.", badcoord:"Invalid coordinates.", mypos:"My location", needkey:"Outside Claude an API key is required – open the API key field above." },
+  de: { searching:"Claude sucht am Straßenrand … (10–30 s)", writing:"Claude schreibt die Geschichte … (10–30 s)", nothing:"Hier wurden keine Sehenswürdigkeiten gefunden.", play:"▶ Abspielen", stop:"■ Stopp", found:"Sehenswürdigkeiten nahe", noVoice:"Keine passende Stimme auf diesem Gerät.", aifail:"Claude-Aufruf fehlgeschlagen: ", parsefail:"Antwort konnte nicht gelesen werden – bitte erneut versuchen.", nopos:"Standort hier nicht verfügbar.", badcoord:"Ungültige Koordinaten.", mypos:"Mein Standort", needkey:"Außerhalb von Claude wird ein API-Schlüssel benötigt." },
+  fr: { searching:"Claude explore le bord de la route … (10–30 s)", writing:"Claude rédige le récit … (10–30 s)", nothing:"Aucun site trouvé ici.", play:"▶ Écouter", stop:"■ Arrêter", found:"sites près de", noVoice:"Aucune voix correspondante sur cet appareil.", aifail:"L'appel à Claude a échoué : ", parsefail:"Réponse illisible – réessayez.", nopos:"Position indisponible ici.", badcoord:"Coordonnées invalides.", mypos:"Ma position", needkey:"Hors de Claude, une clé API est requise." },
+};
+
+// ---------- Tilstand ----------
+let lang = "no";
+let length = "short";
+let pos = PRESETS[0];
+let voices = [];
+let currentText = "";
+
+const $ = (id) => document.getElementById(id);
+const t = () => TXT[lang];
+const langDef = () => LANGS.find(l => l.code === lang);
+
+// ---------- Claude-API (felles) ----------
+async function callClaude(prompt, useSearch) {
+  const headers = { "Content-Type": "application/json" };
+  const key = $("apikey").value.trim();
+  if (key) {
+    headers["x-api-key"] = key;
+    headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
+  }
+  const body = {
+    model: "claude-sonnet-4-6",
+    max_tokens: 1000,
+    messages: [{ role: "user", content: prompt }],
+  };
+  if (useSearch) body.tools = [{ type: "web_search_20250305", name: "web_search" }];
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: headers,
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401 && !key) throw new Error(t().needkey);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const data = await res.json();
+  // Svar kan inneholde flere blokker (tekst + søkeverktøy) – slå sammen all tekst
+  return (data.content || [])
+    .filter(b => b.type === "text")
+    .map(b => b.text)
+    .join("\n")
+    .trim();
+}
+
+function parseJsonLoose(text) {
+  const clean = text.replace(/```json|```/g, "").trim();
+  const start = clean.indexOf("[");
+  const end = clean.lastIndexOf("]");
+  if (start === -1 || end === -1) throw new Error("no json");
+  return JSON.parse(clean.slice(start, end + 1));
+}
+
+// ---------- Steg 1: finn severdigheter ----------
+async function findSights(p) {
+  const prompt = `You are the point-of-interest service of an in-car audio guide.
+
+A driver is at latitude ${p.lat}, longitude ${p.lon}${p.name ? " (near " + p.name + ", Norway)" : ""}.
+
+Use web search to identify the 5-8 most interesting sights within roughly 5 km of this position: historic buildings, churches, natural landmarks, museums, memorials, notable engineering works, etc. Prefer things visible from or close to a road.
+
+Respond with ONLY a JSON array, no markdown, no preamble, in this exact shape:
+[{"name":"...","hint":"one short factual line in ${langDef().name} about what it is","dist":"approx distance like '1,2 km' or '400 m'"}]
+
+Names should be the common local names. If you find nothing, return [].`;
+  const text = await callClaude(prompt, true);
+  return parseJsonLoose(text);
+}
+
+// ---------- Steg 2: skriv fortellingen ----------
+async function makeStory(sight, p) {
+  const words = length === "short" ? "70-90" : "200-240";
+  const prompt = `You are the narrator of an in-car audio guide. A driver near latitude ${p.lat}, longitude ${p.lon} is approaching "${sight.name}" (about ${sight.dist} away).
+
+Use web search to find reliable facts about it (Wikipedia and similar sources), then write a spoken narration in ${langDef().name}, ${words} words.
+
+Rules:
+- Spoken style: short sentences, written for the ear, warm and vivid but strictly factual.
+- Open with what the driver can see or is approaching right now. Never open with an encyclopedia definition.
+- Pick ONE compelling thread; do not cram in everything.
+- Use ONLY facts you actually found in sources. Never invent names, dates or numbers. If sources are thin, say less rather than guessing.
+- Convert abstract numbers into something tangible when natural.
+- Do not mention searching, sources, Wikipedia or these instructions in the narration itself.
+- Respond with ONLY the narration text, no preamble, no markdown, no citations.`;
+  return callClaude(prompt, true);
+}
+
+// ---------- Tale ----------
+function loadVoices() { try { voices = window.speechSynthesis.getVoices(); } catch (e) { voices = []; } }
+if ("speechSynthesis" in window) {
+  loadVoices();
+  window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+}
+
+function pickVoice(prefix) {
+  const match = voices.filter(v => (v.lang || "").toLowerCase().startsWith(prefix));
+  if (match.length) return match.find(v => v.localService) || match[0];
+  if (prefix === "nb") {
+    const no = voices.filter(v => /^n[on]/i.test(v.lang || ""));
+    if (no.length) return no[0];
+  }
+  return null;
+}
+
+function speak(text) {
+  if (!("speechSynthesis" in window)) { visStemmevarsel(true); return; }
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const v = pickVoice(langDef().tts);
+    if (v) { u.voice = v; u.lang = v.lang; visStemmevarsel(false); }
+    else { u.lang = langDef().tts; visStemmevarsel(true); }
+    u.rate = 0.98;
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
+    setSpeaking(true);
+    window.speechSynthesis.speak(u);
+  } catch (e) { setSpeaking(false); }
+}
+
+function stopSpeak() {
+  try { window.speechSynthesis.cancel(); } catch (e) {}
+  setSpeaking(false);
+}
+
+function setSpeaking(on) {
+  $("lydlinje").classList.toggle("aktiv", on);
+  $("spillknapp").classList.toggle("skjult", on);
+  $("stoppknapp").classList.toggle("skjult", !on);
+}
+
+function visStemmevarsel(on) {
+  const el = $("stemmevarsel");
+  el.textContent = t().noVoice;
+  el.classList.toggle("skjult", !on);
+}
+
+// ---------- UI-hjelpere ----------
+function status(msg) {
+  const el = $("status");
+  el.textContent = msg || "";
+  el.classList.toggle("skjult", !msg);
+}
+function feil(msg) {
+  const el = $("feil");
+  el.textContent = msg || "";
+  el.classList.toggle("skjult", !msg);
+}
+
+// ---------- Rendering ----------
+function renderChips() {
+  const sr = $("spraakrad");
+  sr.innerHTML = "";
+  LANGS.forEach(l => {
+    const b = document.createElement("button");
+    b.textContent = l.label;
+    b.className = l.code === lang ? "aktiv" : "";
+    b.onclick = () => { lang = l.code; nullstill(); renderChips(); };
+    sr.appendChild(b);
+  });
+
+  const lr = $("lengderad");
+  lr.innerHTML = "";
+  const shortLabel = lang === "no" ? "Kort (~30 sek)" : lang === "de" ? "Kurz (~30 s)" : lang === "fr" ? "Court (~30 s)" : "Short (~30 s)";
+  const longLabel = lang === "no" ? "Lang (~90 sek)" : lang === "de" ? "Lang (~90 s)" : lang === "fr" ? "Long (~90 s)" : "Long (~90 s)";
+  [["short", shortLabel], ["long", longLabel]].forEach(pair => {
+    const b = document.createElement("button");
+    b.textContent = pair[1];
+    b.className = length === pair[0] ? "aktiv" : "";
+    b.onclick = () => { length = pair[0]; renderChips(); };
+    lr.appendChild(b);
+  });
+
+  const pr = $("posisjonsrad");
+  pr.innerHTML = "";
+  PRESETS.forEach(p => {
+    const b = document.createElement("button");
+    b.textContent = p.name;
+    b.className = pos.name === p.name ? "aktiv" : "";
+    b.onclick = () => { pos = p; renderChips(); search(p); };
+    pr.appendChild(b);
+  });
+  const gps = document.createElement("button");
+  gps.textContent = "📍 " + t().mypos;
+  gps.onclick = brukMinPosisjon;
+  pr.appendChild(gps);
+
+  $("spillknapp").textContent = t().play;
+  $("stoppknapp").textContent = t().stop;
+}
+
+function nullstill() {
+  stopSpeak();
+  $("fortelling").classList.add("skjult");
+  $("resultater").classList.add("skjult");
+  $("poiliste").innerHTML = "";
+  feil(""); status("");
+}
+
+// ---------- Flyt ----------
+async function search(p) {
+  nullstill();
+  status(t().searching);
+  try {
+    const sights = await findSights(p);
+    status("");
+    if (!Array.isArray(sights) || !sights.length) { feil(t().nothing); return; }
+    $("resultat-etikett").textContent = sights.length + " " + t().found + " " + p.name;
+    const ul = $("poiliste");
+    ul.innerHTML = "";
+    sights.forEach(s => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      const topp = document.createElement("span");
+      topp.className = "topplinje";
+      const navn = document.createElement("span");
+      navn.className = "navn";
+      navn.textContent = s.name || "";
+      const avst = document.createElement("span");
+      avst.className = "avstand";
+      avst.textContent = (s.dist || "") + " →";
+      topp.append(navn, avst);
+      const hint = document.createElement("span");
+      hint.className = "hint";
+      hint.textContent = s.hint || "";
+      b.append(topp, hint);
+      b.onclick = () => fortell(s, p);
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+    $("resultater").classList.remove("skjult");
+  } catch (e) {
+    status("");
+    if ((e.message || "").indexOf("json") !== -1 || e instanceof SyntaxError) feil(t().parsefail);
+    else feil(t().aifail + (e.message || ""));
+  }
+}
+
+async function fortell(sight, p) {
+  stopSpeak();
+  feil("");
+  $("fortelling").classList.add("skjult");
+  status(t().writing);
+  document.querySelectorAll("#poiliste button").forEach(b => b.disabled = true);
+  try {
+    const narration = await makeStory(sight, p);
+    if (!narration) throw new Error(t().parsefail);
+    currentText = narration;
+    $("f-tittel").textContent = sight.name;
+    $("f-meta").textContent = sight.dist || "";
+    $("f-tekst").textContent = narration;
+    status("");
+    $("fortelling").classList.remove("skjult");
+    $("fortelling").scrollIntoView({ behavior: "smooth", block: "start" });
+    speak(narration);
+  } catch (e) {
+    status("");
+    feil(t().aifail + (e.message || ""));
+  } finally {
+    document.querySelectorAll("#poiliste button").forEach(b => b.disabled = false);
+  }
+}
+
+function brukMinPosisjon() {
+  if (!navigator.geolocation) { feil(t().nopos); return; }
+  status(t().searching);
+  navigator.geolocation.getCurrentPosition(
+    g => {
+      pos = { name: t().mypos, lat: g.coords.latitude, lon: g.coords.longitude };
+      renderChips();
+      search(pos);
+    },
+    () => { status(""); feil(t().nopos); },
+    { enableHighAccuracy: false, timeout: 8000 }
+  );
+}
+
+// ---------- Hendelser ----------
+$("gaahit").onclick = () => {
+  const la = parseFloat($("lat").value.replace(",", "."));
+  const lo = parseFloat($("lon").value.replace(",", "."));
+  if (isNaN(la) || isNaN(lo)) { feil(t().badcoord); return; }
+  pos = { name: la.toFixed(3) + ", " + lo.toFixed(3), lat: la, lon: lo };
+  renderChips();
+  search(pos);
+};
+$("spillknapp").onclick = () => { if (currentText) speak(currentText); };
+$("stoppknapp").onclick = stopSpeak;
+
+// ---------- Start ----------
+renderChips();
+</script>
+</body>
+</html>

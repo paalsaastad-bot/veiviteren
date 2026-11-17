@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VeiViteren – prototype</title>
+<style>
+  :root {
+    --asfalt: #1c1e22;
+    --skiltbrun: #6b4a2b;
+    --linjegul: #f2c230;
+    --taakehvit: #f5f2ec;
+    --skumringblaa: #2e3a48;
+    --skumringblaa-lys: #3a4a5c;
+    --dus: #9aa6b2;
+    --dusere: #6b7885;
+    --kremtekst: #e8dcc8;
+    --feilroed: #e8a0a0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--asfalt);
+    color: var(--taakehvit);
+    font-family: 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 0 16px 64px; }
+  .display { font-family: 'Avenir Next Condensed', 'Arial Narrow', sans-serif; text-transform: uppercase; }
+  header { padding: 32px 0 24px; }
+  .toppskilt {
+    display: inline-block;
+    background: var(--skiltbrun);
+    border: 2px solid var(--taakehvit);
+    border-radius: 10px;
+    padding: 16px 20px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.4);
+  }
+  .toppskilt h1 { font-size: 1.6rem; letter-spacing: .08em; }
+  .toppskilt p { font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; color: var(--kremtekst); margin-top: 4px; }
+  .midtstripe {
+    height: 4px; margin: 0 0 24px;
+    background: repeating-linear-gradient(90deg, var(--linjegul) 0 32px, transparent 32px 56px);
+  }
+  h2.etikett { font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; color: var(--dus); margin-bottom: 8px; }
+  .rad { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  button {
+    font: inherit; cursor: pointer; border: none;
+    border-radius: 8px; padding: 8px 12px;
+    font-size: .875rem; font-weight: 600; letter-spacing: .02em;
+    background: var(--skumringblaa); color: var(--taakehvit);
+    transition: background .15s, filter .15s;
+  }
+  button:hover { background: var(--skumringblaa-lys); }
+  button.aktiv { background: var(--linjegul); color: var(--asfalt); }
+  button:disabled { opacity: .5; cursor: wait; }
+  button:focus-visible { outline: 3px solid var(--linjegul); outline-offset: 2px; }
+  input {
+    font: inherit; font-size: .875rem;
+    background: var(--skumringblaa); color: var(--taakehvit);
+    border: none; border-radius: 8px; padding: 8px 12px; width: 116px;
+  }
+  input.bred { width: 100%; max-width: 420px; }
+  input::placeholder { color: var(--dusere); }
+  input:focus-visible { outline: 3px solid var(--linjegul); outline-offset: 1px; }
+  section { margin-bottom: 24px; }
+  .status { font-size: .875rem; color: var(--linjegul); margin-bottom: 16px; animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+  @media (prefers-reduced-motion: reduce) { .status { animation: none; } }
+  .feil { font-size: .875rem; color: var(--feilroed); margin-bottom: 16px; }
+  .skilt { background: var(--skiltbrun); border: 2px solid var(--taakehvit); border-radius: 10px; }
+  #fortelling { padding: 20px; margin-bottom: 24px; box-shadow: 0 8px 24px rgba(0,0,0,.45); }
+  .f-topp { display: flex; gap: 16px; align-items: flex-start; }
+  .f-topp img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid var(--taakehvit); flex-shrink: 0; }
+  .f-topp h3 { font-size: 1.1rem; letter-spacing: .05em; line-height: 1.15; }
+  .f-topp .meta { font-size: .72rem; color: var(--kremtekst); margin-top: 4px; }
+  .lydlinje { height: 4px; margin: 16px 0; background: repeating-linear-gradient(90deg, #8a7452 0 24px, transparent 24px 42px); }
+  .lydlinje.aktiv { background: repeating-linear-gradient(90deg, var(--linjegul) 0 24px, transparent 24px 42px); }
+  #f-tekst { font-size: .95rem; line-height: 1.65; white-space: pre-line; }
+  .f-knapper { margin-top: 16px; display: flex; gap: 8px; }
+  .f-knapper .spill { background: var(--linjegul); color: var(--asfalt); font-weight: 700; padding: 10px 16px; }
+  .f-knapper .stopp { background: var(--taakehvit); color: var(--asfalt); font-weight: 700; padding: 10px 16px; }
+  #stemmevarsel { font-size: .72rem; color: var(--kremtekst); margin-top: 8px; }
+  #poiliste { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  #poiliste button {
+    width: 100%; text-align: left;
+    background: var(--skiltbrun); border: 2px solid var(--taakehvit);
+    border-radius: 10px; padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  }
+  #poiliste button:hover { filter: brightness(1.12); background: var(--skiltbrun); }
+  #poiliste .navn { font-family: 'Avenir Next Condensed', 'Arial Narrow', sans-serif; text-transform: uppercase; font-size: .85rem; letter-spacing: .04em; font-weight: 600; }
+  #poiliste .avstand { font-size: .72rem; color: var(--kremtekst); white-space: nowrap; }
+  details { margin-top: 8px; }
+  summary { font-size: .75rem; color: var(--dus); cursor: pointer; }
+  footer { margin-top: 40px; font-size: .72rem; color: var(--dusere); line-height: 1.6; }
+  .skjult { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="toppskilt">
+      <h1 class="display">VeiViteren</h1>
+      <p>Prototype · posisjon → Wikipedia → AI → tale</p>
+    </div>
+  </header>
+
+  <div class="midtstripe" aria-hidden="true"></div>
+
+  <section>
+    <div class="rad" id="spraakrad"></div>
+    <div class="rad" id="lengderad"></div>
+  </section>
+
+  <section>
+    <h2 class="etikett">Posisjon</h2>
+    <div class="rad" id="posisjonsrad"></div>
+    <div class="rad">
+      <input id="lat" placeholder="61.0471" inputmode="decimal" aria-label="Breddegrad">
+      <input id="lon" placeholder="7.8122" inputmode="decimal" aria-label="Lengdegrad">
+      <button id="gaahit">Gå hit</button>
+    </div>
+    <details>
+      <summary>API-nøkkel (bare nødvendig utenfor Claude)</summary>
+      <div class="rad" style="margin-top:8px">
+        <input id="apikey" class="bred" type="password" placeholder="sk-ant-…" aria-label="Anthropic API-nøkkel">
+      </div>
+    </details>
+  </section>
+
+  <p class="status skjult" id="status"></p>
+  <p class="feil skjult" id="feil"></p>
+
+  <section class="skilt skjult" id="fortelling" aria-live="polite">
+    <div class="f-topp">
+      <img id="f-bilde" alt="" class="skjult">
+      <div>
+        <h3 class="display" id="f-tittel"></h3>
+        <p class="meta" id="f-meta"></p>
+      </div>
+    </div>
+    <div class="lydlinje" id="lydlinje" aria-hidden="true"></div>
+    <p id="f-tekst"></p>
+    <div class="f-knapper">
+      <button class="spill" id="spillknapp">▶ Spill av</button>
+      <button class="stopp skjult" id="stoppknapp">■ Stopp</button>
+    </div>
+    <p id="stemmevarsel" class="skjult"></p>
+  </section>
+
+  <section id="resultater" class="skjult">
+    <h2 class="etikett" id="resultat-etikett"></h2>
+    <ul id="poiliste"></ul>
+  </section>
+
+  <footer>
+    Kjerneflyt: Wikipedia geosøk (5 km radius) → artikkelutdrag → Claude skriver muntlig fortelling → enhetens talesyntese leser opp.
+    I produkt erstattes talesyntesen av profesjonell TTS, og triggingen skjer automatisk av kjøreretning og fart.
+  </footer>
+</div>
+
+<script>
+// ---------- Data ----------
+const PRESETS = [
+  { name: "Borgund (E16)", lat: 61.0471, lon: 7.8122 },
+  { name: "Lærdalsøyri",   lat: 61.0996, lon: 7.4815 },
+  { name: "Vang i Valdres",lat: 61.1256, lon: 8.5714 },
+  { name: "Fagernes",      lat: 60.9857, lon: 9.2325 },
+  { name: "Hønefoss",      lat: 60.168,  lon: 10.256 },
+];
+
+const LANGS = [
+  { code: "no", wiki: "no", label: "Norsk",    tts: "nb", name: "norsk bokmål" },
+  { code: "en", wiki: "en", label: "English",  tts: "en", name: "English" },
+  { code: "de", wiki: "de", label: "Deutsch",  tts: "de", name: "Deutsch" },
+  { code: "fr", wiki: "fr", label: "Français", tts: "fr", name: "français" },
+];
+
+const TXT = {
+  no: { searching:"Søker langs veien …", writing:"Skriver fortelling …", nothing:"Ingen severdigheter funnet innen 5 km på dette språkets Wikipedia. Prøv et annet punkt eller språk.", play:"▶ Spill av", stop:"■ Stopp", source:"Kilde: Wikipedia", short:"Kort (~30 sek)", long:"Lang (~90 sek)", found:"severdigheter innen 5 km", noVoice:"Fant ingen stemme for språket på denne enheten – teksten vises likevel.", wikifail:"Wikipedia-oppslaget feilet. Sjekk nettforbindelsen og prøv igjen.", genfail:"Klarte ikke lage fortellingen: ", nopos:"Fikk ikke tilgang til posisjon.", badcoord:"Ugyldige koordinater.", mypos:"Min posisjon", thin:"Kilden var for tynn til å lage en fortelling.", needkey:"Utenfor Claude kreves API-nøkkel – åpne «API-nøkkel» over og lim inn nøkkelen din." },
+  en: { searching:"Scanning the roadside …", writing:"Writing the story …", nothing:"No sights found within 5 km on this language's Wikipedia. Try another spot or language.", play:"▶ Play", stop:"■ Stop", source:"Source: Wikipedia", short:"Short (~30 s)", long:"Long (~90 s)", found:"sights within 5 km", noVoice:"No matching voice on this device – showing text anyway.", wikifail:"Wikipedia lookup failed. Check your connection and try again.", genfail:"Could not create the story: ", nopos:"Could not access your location.", badcoord:"Invalid coordinates.", mypos:"My location", thin:"The source was too thin to build a story.", needkey:"Outside Claude an API key is required – open the API key field above and paste yours." },
+  de: { searching:"Suche am Straßenrand …", writing:"Schreibe die Geschichte …", nothing:"Keine Sehenswürdigkeiten im Umkreis von 5 km gefunden.", play:"▶ Abspielen", stop:"■ Stopp", source:"Quelle: Wikipedia", short:"Kurz (~30 s)", long:"Lang (~90 s)", found:"Sehenswürdigkeiten im Umkreis von 5 km", noVoice:"Keine passende Stimme auf diesem Gerät – Text wird trotzdem angezeigt.", wikifail:"Wikipedia-Abfrage fehlgeschlagen.", genfail:"Geschichte konnte nicht erstellt werden: ", nopos:"Kein Zugriff auf den Standort.", badcoord:"Ungültige Koordinaten.", mypos:"Mein Standort", thin:"Die Quelle war zu dünn.", needkey:"Außerhalb von Claude wird ein API-Schlüssel benötigt." },
+  fr: { searching:"Recherche au bord de la route …", writing:"Rédaction du récit …", nothing:"Aucun site trouvé dans un rayon de 5 km.", play:"▶ Écouter", stop:"■ Arrêter", source:"Source : Wikipédia", short:"Court (~30 s)", long:"Long (~90 s)", found:"sites dans un rayon de 5 km", noVoice:"Aucune voix correspondante sur cet appareil – texte affiché quand même.", wikifail:"Échec de la recherche Wikipédia.", genfail:"Impossible de créer le récit : ", nopos:"Position inaccessible.", badcoord:"Coordonnées invalides.", mypos:"Ma position", thin:"La source était trop courte.", needkey:"Hors de Claude, une clé API est requise." },
+};
+
+// ---------- Tilstand ----------
+let lang = "no";
+let length = "short";
+let pos = PRESETS[0];
+let voices = [];
+let currentText = "";
+
+const $ = (id) => document.getElementById(id);
+const t = () => TXT[lang];
+const langDef = () => LANGS.find(l => l.code === lang);
+
+// ---------- Wikipedia ----------
+async function geoSearch(wiki, lat, lon) {
+  const url = `https://${wiki}.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}%7C${lon}&gsradius=5000&gslimit=14&format=json&origin=*`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("geosearch " + res.status);
+  const data = await res.json();
+  return (data.query && data.query.geosearch || []).sort((a, b) => a.dist - b.dist);
+}
+
+async function getExtract(wiki, pageid) {
+  const url = `https://${wiki}.wikipedia.org/w/api.php?action=query&prop=extracts%7Cpageimages&explaintext=1&exchars=2600&pageids=${pageid}&piprop=thumbnail&pithumbsize=400&format=json&origin=*`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("extract " + res.status);
+  const data = await res.json();
+  const page = data.query && data.query.pages && data.query.pages[pageid];
+  return { text: (page && page.extract) || "", thumb: (page && page.thumbnail && page.thumbnail.source) || null };
+}
+
+// ---------- Claude ----------
+async function generateStory(title, sourceText, distM) {
+  const words = length === "short" ? "70-90" : "200-240";
+  const prompt = `You are the narrator of an in-car audio guide. A driver is right now approximately ${Math.round(distM)} meters from "${title}".
+
+Below is the source text from Wikipedia. Rewrite it as a spoken narration in ${langDef().name}, ${words} words.
+
+Rules:
+- Spoken style: short sentences, written for the ear, warm and vivid but factual.
+- Open with what the driver can see or is approaching right now. Never open with an encyclopedia definition.
+- Pick ONE compelling thread from the source; do not cram in everything.
+- Use ONLY facts present in the source text. Never invent names, dates or numbers.
+- Convert abstract numbers into something tangible when natural.
+- Do not mention Wikipedia or these instructions.
+- Respond with ONLY the narration text, no preamble, no markdown.
+
+SOURCE:
+${sourceText}`;
+
+  const headers = { "Content-Type": "application/json" };
+  const key = $("apikey").value.trim();
+  if (key) {
+    headers["x-api-key"] = key;
+    headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
+  }
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: headers,
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1000,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  if (res.status === 401 && !key) throw new Error(t().needkey);
+  if (!res.ok) throw new Error("AI " + res.status);
+  const data = await res.json();
+  return data.content.filter(b => b.type === "text").map(b => b.text).join("\n").trim();
+}
+
+// ---------- Tale ----------
+function loadVoices() { try { voices = window.speechSynthesis.getVoices(); } catch (e) { voices = []; } }
+if ("speechSynthesis" in window) {
+  loadVoices();
+  window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+}
+
+function pickVoice(prefix) {
+  const match = voices.filter(v => (v.lang || "").toLowerCase().startsWith(prefix));
+  if (match.length) return match.find(v => v.localService) || match[0];
+  if (prefix === "nb") {
+    const no = voices.filter(v => /^n[on]/i.test(v.lang || ""));
+    if (no.length) return no[0];
+  }
+  return null;
+}
+
+function speak(text) {
+  if (!("speechSynthesis" in window)) { visStemmevarsel(true); return; }
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const v = pickVoice(langDef().tts);
+    if (v) { u.voice = v; u.lang = v.lang; visStemmevarsel(false); }
+    else { u.lang = langDef().tts; visStemmevarsel(true); }
+    u.rate = 0.98;
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
+    setSpeaking(true);
+    window.speechSynthesis.speak(u);
+  } catch (e) { setSpeaking(false); }
+}
+
+function stopSpeak() {
+  try { window.speechSynthesis.cancel(); } catch (e) {}
+  setSpeaking(false);
+}
+
+function setSpeaking(on) {
+  $("lydlinje").classList.toggle("aktiv", on);
+  $("spillknapp").classList.toggle("skjult", on);
+  $("stoppknapp").classList.toggle("skjult", !on);
+}
+
+function visStemmevarsel(on) {
+  const el = $("stemmevarsel");
+  el.textContent = t().noVoice;
+  el.classList.toggle("skjult", !on);
+}
+
+// ---------- UI-hjelpere ----------
+function status(msg) {
+  const el = $("status");
+  el.textContent = msg || "";
+  el.classList.toggle("skjult", !msg);
+}
+function feil(msg) {
+  const el = $("feil");
+  el.textContent = msg || "";
+  el.classList.toggle("skjult", !msg);
+}
+function fmtDist(m) {
+  return m >= 1000 ? (m / 1000).toFixed(1).replace(".", ",") + " km" : Math.round(m) + " m";
+}
+
+// ---------- Rendering ----------
+function renderChips() {
+  const sr = $("spraakrad");
+  sr.innerHTML = "";
+  LANGS.forEach(l => {
+    const b = document.createElement("button");
+    b.textContent = l.label;
+    b.className = l.code === lang ? "aktiv" : "";
+    b.onclick = () => { lang = l.code; nullstill(); renderChips(); };
+    sr.appendChild(b);
+  });
+
+  const lr = $("lengderad");
+  lr.innerHTML = "";
+  [["short", t().short], ["long", t().long]].forEach(pair => {
+    const b = document.createElement("button");
+    b.textContent = pair[1];
+    b.className = length === pair[0] ? "aktiv" : "";
+    b.onclick = () => { length = pair[0]; renderChips(); };
+    lr.appendChild(b);
+  });
+
+  const pr = $("posisjonsrad");
+  pr.innerHTML = "";
+  PRESETS.forEach(p => {
+    const b = document.createElement("button");
+    b.textContent = p.name;
+    b.className = pos.name === p.name ? "aktiv" : "";
+    b.onclick = () => { pos = p; renderChips(); search(p); };
+    pr.appendChild(b);
+  });
+  const gps = document.createElement("button");
+  gps.textContent = "📍 " + t().mypos;
+  gps.onclick = brukMinPosisjon;
+  pr.appendChild(gps);
+
+  $("spillknapp").textContent = t().play;
+  $("stoppknapp").textContent = t().stop;
+}
+
+function nullstill() {
+  stopSpeak();
+  $("fortelling").classList.add("skjult");
+  $("resultater").classList.add("skjult");
+  $("poiliste").innerHTML = "";
+  feil(""); status("");
+}
+
+// ---------- Flyt ----------
+async function search(p) {
+  nullstill();
+  status(t().searching);
+  try {
+    const results = await geoSearch(langDef().wiki, p.lat, p.lon);
+    status("");
+    if (!results.length) { feil(t().nothing); return; }
+    $("resultat-etikett").textContent = results.length + " " + t().found + " · " + p.name;
+    const ul = $("poiliste");
+    ul.innerHTML = "";
+    results.forEach(poi => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      const navn = document.createElement("span");
+      navn.className = "navn";
+      navn.textContent = poi.title;
+      const avst = document.createElement("span");
+      avst.className = "avstand";
+      avst.textContent = fmtDist(poi.dist) + " →";
+      b.append(navn, avst);
+      b.onclick = () => fortell(poi);
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+    $("resultater").classList.remove("skjult");
+  } catch (e) {
+    status("");
+    feil(t().wikifail);
+  }
+}
+
+async function fortell(poi) {
+  stopSpeak();
+  feil("");
+  $("fortelling").classList.add("skjult");
+  status(t().writing);
+  document.querySelectorAll("#poiliste button").forEach(b => b.disabled = true);
+  try {
+    const kilde = await getExtract(langDef().wiki, poi.pageid);
+    if (!kilde.text || kilde.text.length < 120) throw new Error(t().thin);
+    const narration = await generateStory(poi.title, kilde.text, poi.dist);
+    currentText = narration;
+    $("f-tittel").textContent = poi.title;
+    $("f-meta").textContent = fmtDist(poi.dist) + " · " + t().source;
+    $("f-tekst").textContent = narration;
+    const img = $("f-bilde");
+    if (kilde.thumb) { img.src = kilde.thumb; img.classList.remove("skjult"); }
+    else img.classList.add("skjult");
+    status("");
+    $("fortelling").classList.remove("skjult");
+    $("fortelling").scrollIntoView({ behavior: "smooth", block: "start" });
+    speak(narration);
+  } catch (e) {
+    status("");
+    feil(t().genfail + (e.message || ""));
+  } finally {
+    document.querySelectorAll("#poiliste button").forEach(b => b.disabled = false);
+  }
+}
+
+function brukMinPosisjon() {
+  if (!navigator.geolocation) { feil(t().nopos); return; }
+  status(t().searching);
+  navigator.geolocation.getCurrentPosition(
+    g => {
+      pos = { name: t().mypos, lat: g.coords.latitude, lon: g.coords.longitude };
+      renderChips();
+      search(pos);
+    },
+    () => { status(""); feil(t().nopos); },
+    { enableHighAccuracy: false, timeout: 8000 }
+  );
+}
+
+// ---------- Hendelser ----------
+$("gaahit").onclick = () => {
+  const la = parseFloat($("lat").value.replace(",", "."));
+  const lo = parseFloat($("lon").value.replace(",", "."));
+  if (isNaN(la) || isNaN(lo)) { feil(t().badcoord); return; }
+  pos = { name: la.toFixed(3) + ", " + lo.toFixed(3), lat: la, lon: lo };
+  renderChips();
+  search(pos);
+};
+$("spillknapp").onclick = () => { if (currentText) speak(currentText); };
+$("stoppknapp").onclick = stopSpeak;
+
+// ---------- Start ----------
+renderChips();
+</script>
+</body>
+</html>
