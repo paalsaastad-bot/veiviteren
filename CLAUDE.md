@@ -83,7 +83,20 @@ Dedupliser på tvers av kilder; Wikidata-id er primærnøkkel når den finnes.
 - `docs/prototyper/` – de tre HTML-prototypene. Viser ØNSKET oppførsel (auto-triggering,
   retningsfilter, fortellingstone), IKKE ønsket teknologi. Produktet er native + POI-database.
 
+## Avklarte beslutninger (nov. 2026)
+- **Eier er ikke utvikler:** forklar i klart språk, små steg, gi en «slik tester du»-sjekkliste per steg.
+- **Utviklingsmiljø:** Claude jobber i skyen; alt lagres i GitHub (`paalsaastad-bot/veiviteren`).
+  Eier har iPhone + Windows (ingen Mac) → Expo + EAS (bygg i skyen). **iPhone først**, Android senere.
+- **Testing:** både simulert kjøretur og korte prøveturer. **Testområde: Oslo og omegn**
+  (Lærdal-strekningen i docs er droppet). Apple Developer-konto kjøpes først når ekte biltest trengs.
+- **Tjenester (standardvalg):** Expo, Anthropic API (Claude), Azure Speech (TTS), Supabase (Postgres/PostGIS + lagring).
+- **Budsjett:** maks ~200 kr/mnd i utviklingsfasen. Sett kostnadsgrenser/varsler der det går.
+- **Stemme:** én stemme per språk i MVP; eier velger blant 3–4 kandidater.
+- **Pre-generering:** under utvikling kun testområdet; ved lansering topp-rangerte POI-er i Norge, resten lazily.
+- **Side av veien:** ikke i MVP. Bruk nøytrale åpninger («Foran deg …», «Like ved veien …»).
+- **MVP er ferdig når:** 20–30 min tur uten å røre telefonen; fortelling starter før passering;
+  <1 av 10 om ting bak/feil vei; musikk dempes og kommer tilbake; pauser mellom fortellinger;
+  enkel reiselogg med kildehenvisning.
+
 ## Åpne spørsmål (avklar med meg, ikke anta)
-- Én norsk fortellerstemme til å begynne med, eller flere?
-- Hvor aggressiv skal pre-generering av POI-er være ved lansering (kostnad vs. førstegangsopplevelse)?
-- Skal fortellinger kunne si hvilken side av veien stedet er på?
+- (ingen akkurat nå)
